@@ -56,7 +56,7 @@ renv::restore()
   - `output/Phi_marker_weights.tsv`
 
 ### Stage 02 - Popkin Eigendecomposition (EVD)
-- Loads $\Phi$ from Stage 01 and performs a **top-K eigendecomposition using** `RSpectra::eigs_sym()`
+- Loads $\hat{\Phi}$ from Stage 01 and performs a **top-K eigendecomposition using** `RSpectra::eigs_sym()`
 - Produces leading eigenvalues and eigenvectors for downstream analysis
 - Saves results to: 
   - `output/eigen_vals.tsv`
