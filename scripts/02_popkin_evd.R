@@ -20,7 +20,7 @@ out_prefix <- "output/eigen"
 
 # Load Popkin kinship matrix
 cat("Loading Popkin kinship matrix from:", grm_path, "\n")
-Phi <- as.matrix(fread(grm_path))
+Phi <- as.matrix(read.table(grm_path, header = TRUE, row.names = 1))
 cat("Matrix dimensions:", paste(dim(Phi), collapse = " x "), "\n")
 
 # Compute top-K eigenpairs

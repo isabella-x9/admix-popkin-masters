@@ -22,7 +22,7 @@ cat("Matrix dimensions:", paste(dim(X), collapse = " x "), "\n")
 
 # Compute Popkin kinship matrix
 cat("Computing Popkin kinship matrix...\n")
-Phi <- popkin(X)
+Phi <- popkin(t(X))
 cat("Kinship matrix dimensions:", paste(dim(Phi), collapse = " x "), "\n")
 
 # Compute marker weights (mean allele frequency variance)
@@ -33,7 +33,7 @@ cat("Mean marker variance:", mean(M), "\n")
 
 # Save outputs
 dir.create("output", showWarnings = FALSE)
-write.table(Phi, paste0(out_prefix, ".tsv"), sep = "\t", quote = FALSE, col.names = NA)
+write.table(Phi, paste0(out_prefix, ".tsv"), sep = "\t", quote = FALSE)
 write.table(M, paste0(out_prefix, "_marker_weights.tsv"), sep = "\t", quote = FALSE, col.names = FALSE)
 cat("Saved Popkin kinship matrix and marker weights to 'output/'\n")
 
