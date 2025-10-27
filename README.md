@@ -90,4 +90,7 @@ Expected outputs appear in the `outputs/` folder.
 
 ## References
 
+- Ochoa & Storey (2021). *Estimating FST and kinship for arbitrary population structures*. PLoS Genetics. 
+- Ochoa et al. (2025). *AdmixCor: Admixture inference from genetic covariance*. Duke University, Ochoa Lab.
+- Popkin R vignette: https://cran.r-project.org/web/packages/popkin/vignettes/popkin.html
 
