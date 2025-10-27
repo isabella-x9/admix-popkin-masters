@@ -1,5 +1,5 @@
 # 02_popkin_evd.R
-# ------------------------------------------------
+# ------------------------------------------------------------
 # Description: 
 #   This script performs a scalable eigendecomposition of the Popkin kinship 
 #   matrix (Phi) computed in Stage 1. 

@@ -1,5 +1,5 @@
 # 01_build_popkin_grm.R
-# ------------------------------------------------
+# ------------------------------------------------------------
 # Description:
 #   This script calculates the Popkin kinship matrix (Phi) and marker weights (M)
 #   from a general genotype matrix file. This is the first stage of the project. 
