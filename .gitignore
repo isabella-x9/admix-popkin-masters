@@ -1,0 +1,17 @@
+# RStudio / renv
+.Rhistory
+.RData
+.Rproj.user/
+.Renv
+renv/library/
+renv/staging/
+# Data
+data/raw/
+data/processed/
+data/sims/
+# Outputs
+output/
+# System / temporary files
+.DS_Store
+*.log
+*.tmp
