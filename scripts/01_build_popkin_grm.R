@@ -2,47 +2,41 @@
 # ------------------------------------------------
 # Description:
 #   This script calculates the Popkin kinship matrix (Phi) and marker weights (M)
-#   from a general genotype matrix file. 
+#   from a general genotype matrix file. This is the first stage of the project. 
 # ============================================================
 
+# Load packages
 suppressPackageStartupMessages({
   library(popkin)
   library(genio)
-  library(argparser)
 })
 
-# Parse command-line arguments 
-p <- arg_parser("Compute Popkin kinship and marker weights from a genotype matrix")
-p <- add_argument(p, "--geno", help = "Path to genotype file (tab- or space-delimited, numeric matrix)", default = NULL)
-p <- add_argument(p, "--out",  help = "Output prefix for GRM (no extension)", default = NULL)
-argv <- parse_args(p)
+# User inputs
+geno_path <- "data/test_geno.tsv"   # path to genotype matrix
+out_prefix <- "output/Phi"
 
-# manual checks
-if (is.null(argv$geno) || is.null(argv$out)) {
-  cat("\nERROR: --geno and --out are required.\n\n")
-  print(p)
-  quit(status = 2)
-}
+# Load genotype matrix
+cat("Loading genotype matrix from:", geno_path, "\n")
+X <- as.matrix(read.table(geno_path, header = TRUE))
+cat("Matrix dimensions:", paste(dim(X), collapse = " x "), "\n")
 
-geno_path <- argv$geno
-base_out  <- argv$out
+# Compute Popkin kinship matrix
+cat("Computing Popkin kinship matrix...\n")
+Phi <- popkin(X)
+cat("Kinship matrix dimensions:", paste(dim(Phi), collapse = " x "), "\n")
 
-# Load genotype data
-message("Reading genotype matrix from: ", geno_path)
-X <- as.matrix(read.table(geno_path, header = FALSE, sep = "", check.names = FALSE))
-storage.mode(X) <- "numeric"
-message("Dimensions: ", paste(dim(X), collapse = " × "))
+# Compute marker weights (mean allele frequency variance)
+cat("Computing marker weights...\n")
+p <- colMeans(X) / 2                  # estimated allele frequencies
+M <- 2 * p * (1 - p)                  # variance per SNP
+cat("Mean marker variance:", mean(M), "\n")
 
-# Compute kinship 
-message("Computing Popkin kinship matrix ...")
-obj <- popkin(X, want_M = TRUE)
-kinship <- obj$kinship
-M <- obj$M
+# Save outputs
+dir.create("output", showWarnings = FALSE)
+write.table(Phi, paste0(out_prefix, ".tsv"), sep = "\t", quote = FALSE, col.names = NA)
+write.table(M, paste0(out_prefix, "_marker_weights.tsv"), sep = "\t", quote = FALSE, col.names = FALSE)
+cat("Saved Popkin kinship matrix and marker weights to 'output/'\n")
 
-# Save results
-message("Writing GRM to: ", base_out)
-write_grm(base_out, kinship, M = M)
-message("RM successfully written.")
 
 
 
