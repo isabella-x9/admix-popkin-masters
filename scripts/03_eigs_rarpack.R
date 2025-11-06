@@ -14,25 +14,32 @@ suppressPackageStartupMessages({
   library(argparser)
 })
 
-# Load genotype matrix 
+# Parse command-line arguments
 p <- arg_parser("rARPACK eigendecomposition benchmark")
 p <- add_argument(p, "--geno", help = "Path to genotype matrix", default = "data/test_geno.tsv")
-argv <- parse_args(p) 
+p <- add_argument(p, "--amin", help = "Path to A_min RDS file",   default = "output/Phi_Amin.rds")
+p <- add_argument(p, "--k",    help = "Number of top eigenvectors", default = 5)
+argv <- parse_args(p)
 
-X <- as.matrix(read.table(argv$geno, header = TRUE)) 
+# Load genotype matrix
+cat("Loading genotype matrix from:", argv$geno, "\n")
+X <- as.matrix(read.table(argv$geno, header = TRUE))
 n <- nrow(X)
 m <- ncol(X)
+cat("Matrix dimensions:", n, "x", m, "\n") 
 
-# Center columns (normalization part)
-X1 <- sweep(X, 2, colMeans(X))  # center by SNP means 
+# Center columns (SNP means)
+X1 <- sweep(X, 2, colMeans(X))
 
-# Load A_min from Stage 01
-A_min <- readRDS("output/Phi_Amin.rds") 
+# Load A_min
+cat("Loading A_min from:", argv$amin, "\n")
+A_min <- readRDS(argv$amin)
+cat("A_min =", round(A_min, 6), "\n")
 
 # Define Phi * v function
 ones_n <- rep(1, n)
-Phi_prod <- function(v) {
-  v <- as.numeric(v)
+Phi_prod <- function(x, args) {
+  v <- as.numeric(x)
   term1 <- ones_n * sum(v) / n
   term2 <- (1 / m) * (X1 %*% (t(X1) %*% v)) - ones_n * sum(v) / n
   term1 - (1 / A_min) * term2
@@ -41,15 +48,13 @@ Phi_prod <- function(v) {
 # Compute top-k eigenvectors using rARPACK
 k <- 5
 start_time <- Sys.time()
-##########################################################################
-eigs <- eigs_sym(Phi_prod, k = k, n = n)
-########## Error in (function (v)  : unused argument (NULL) ###############
-
 end_time <- Sys.time()
-runtime <- round(difftime(end_time, start_time, units = "secs"), 3)
+eigs <- eigs_sym(Phi_prod, k = k, n = n)
+runtime <- round(difftime(Sys.time(), start_time, units = "secs"), 3)
 cat("Eigendecomposition completed in", runtime, "seconds.\n")
 
 # Save results
+dir.create("output", showWarnings = FALSE)
 eig_vals <- data.frame(eigenvalue = eigs$values)
 eig_vecs <- as.data.frame(eigs$vectors)
 colnames(eig_vecs) <- paste0("PC", seq_len(ncol(eig_vecs)))
