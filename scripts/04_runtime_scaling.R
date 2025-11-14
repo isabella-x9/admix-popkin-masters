@@ -15,19 +15,10 @@ simulate_genotypes <- function(n, m) {
   matrix(sample(0:2, n * m, replace = TRUE), nrow = n, ncol = m)
 }
 
-# Compute A_min for scaling
-compute_Amin <- function(X) {
-  n <- nrow(X)
-  m <- ncol(X)
-  X1 <- sweep(X, 2, colMeans(X))
-  A <- (1 / m) * tcrossprod(X1) - matrix(1, n, n) / n
-  min(A)
-}
-
 # RSpectra version (explicit matrix)
 run_rspectra <- function(X, k) {
   n <- nrow(X)
-  Phi <- popkin::popkin(X)
+  Phi <- popkin::popkin(X, loci_on_cols = TRUE)
   t0 <- Sys.time()
   eigs <- RSpectra::eigs_sym(Phi, k = min(k, n - 1))
   runtime <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
@@ -36,20 +27,17 @@ run_rspectra <- function(X, k) {
 
 # rARPACK version (function-based)
 run_rarpack <- function(X, k) {
-  n <- nrow(X); m <- ncol(X)
-  A_min <- compute_Amin(X)
-  ones_n <- rep(1, n)
+  n <- nrow(X)
+  A_min <- min(popkin_A(X, loci_on_cols = TRUE)$A)
   X1 <- sweep(X, 2, colMeans(X))
+  args <- list(
+    X1 = X1, A_min = A_min 
+  )
   
-  Afun <- function(v, args = NULL) {
-    v <- as.numeric(v)
-    term1 <- ones_n * sum(v) / n
-    term2 <- (1 / m) * (X1 %*% (t(X1) %*% v)) - ones_n * sum(v) / n
-    term1 - (1 / A_min) * term2
-  }
+  source("scripts/Phi_prod.R")
   
   t0 <- Sys.time()
-  eigs <- rARPACK::eigs_sym(Afun, k = min(k, n - 1), n = n)
+  eigs <- rARPACK::eigs_sym(Phi_prod, k = min(k, n - 1), n = n, args = args)
   runtime <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   runtime
 }
@@ -62,7 +50,7 @@ results <- data.frame(n = sizes, RSpectra = NA, rARPACK = NA)
 
 for (i in seq_along(sizes)) {
   n <- sizes[i]
-  m <- 100 * n
+  m <- 10000
   cat("\nRunning benchmarks for n =", n, ", m =", m, "...\n")
   X <- simulate_genotypes(n, m)
   results$RSpectra[i] <- run_rspectra(X, k)
@@ -76,12 +64,12 @@ cat("\nRuntime results saved to 'output/runtime_scaling.csv'\n")
 
 # Plot for visualization 
 png("output/runtime_scaling.png", width = 700, height = 500)
-plot(results$n, results$RSpectra, type = "b", pch = 19, log = "xy",
+plot(results$n, results$rARPACK, type = "b", pch = 19, log = "xy",
      col = "red", xlab = "Sample size (n, log scale)",
      ylab = "Runtime (seconds, log scale)",
      main = "Runtime Scaling: RSpectra vs rARPACK")
-lines(results$n, results$rARPACK, type = "b", pch = 19, col = "blue")
-legend("topleft", legend = c("RSpectra", "rARPACK"),
+lines(results$n, results$RSpectra, type = "b", pch = 19, col = "blue")
+legend("topleft", legend = c("rARPACK", "RSpectra"),
        col = c("red", "blue"), pch = 19, bty = "n")
 dev.off()
 

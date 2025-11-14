@@ -15,12 +15,13 @@ suppressPackageStartupMessages({
 
 # User inputs 
 grm_path <- "output/Phi.tsv"     # path to Popkin GRM from Stage 1
-k <- 10                          # number of top eigenvectors
+k <- 5                          # number of top eigenvectors
 out_prefix <- "output/eigen"
 
 # Load Popkin kinship matrix
 cat("Loading Popkin kinship matrix from:", grm_path, "\n")
 Phi <- as.matrix(read.table(grm_path, header = TRUE, row.names = 1))
+print(Phi)
 cat("Matrix dimensions:", paste(dim(Phi), collapse = " x "), "\n")
 
 # Compute top-K eigenpairs

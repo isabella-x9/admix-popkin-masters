@@ -26,7 +26,7 @@ cat("Loaded genotype matrix of dimension", n, "x", m, "\n")
 
 # Compute Popkin kinship matrix
 cat("Computing Popkin kinship matrix...\n")
-Phi <- popkin(X) 
+Phi <- popkin(X, loci_on_cols = TRUE) 
 ##### don't transpose it if it is a BEDMatrix object, because it is not a real matrix #########
 cat("Kinship matrix dimensions:", paste(dim(Phi), collapse = " x "), "\n")
 
@@ -38,12 +38,10 @@ cat("Mean marker variance:", mean(M), "\n")
 
 # Compute A and A_min (for Popkin-EVD)
 cat("Computing A and A_min for Popkin-EVD...\n")
-X1 <- X - rowMeans(X)
 
 # A = (1/m) * X1'X1 − 1_n 1_n'/n
-ones_n <- matrix(1, n, n)
-A <- (1 / m) * tcrossprod(X1) - ones_n / n
-A_min <- min(A)
+ones_n <- matrix(1, n, n) ##### recheck if you need this
+A_min <- min(popkin_A(X, loci_on_cols = TRUE)$A)
 cat("Computed A_min:", A_min, "\n")
 
 # Save outputs
