@@ -29,7 +29,7 @@ run_rspectra <- function(X, k) {
 run_rarpack <- function(X, k) {
   n <- nrow(X)
   A_min <- min(popkin_A(X, loci_on_cols = TRUE)$A)
-  X1 <- sweep(X, 2, colMeans(X))
+  X1 <- X - 1   # subtract 1 from every entry
   args <- list(
     X1 = X1, A_min = A_min 
   )

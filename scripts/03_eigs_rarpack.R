@@ -29,7 +29,7 @@ m <- ncol(X)
 cat("Matrix dimensions:", n, "x", m, "\n") 
 
 # Center columns (SNP means)
-X1 <- sweep(X, 2, colMeans(X))
+X1 <- X - 1   # subtract 1 from every entry
 
 # Load A_min
 cat("Loading A_min from:", argv$amin, "\n")
