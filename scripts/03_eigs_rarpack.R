@@ -36,6 +36,9 @@ cat("Loading A_min from:", argv$amin, "\n")
 A_min <- readRDS(argv$amin)
 cat("A_min =", round(A_min, 6), "\n")
 
+# Define d 
+d <- rowMeans( X1^2 - 1 ) / A_min 
+
 # The Phi * v function already defined
 source("scripts/Phi_prod.R")
 
@@ -44,9 +47,9 @@ k <- 5
 start_time <- Sys.time()
 end_time <- Sys.time()
 args <- list(
-  X1 = X1, A_min = A_min 
+  X1 = X1, A_min = A_min, d = d 
 )
-eigs <- eigs_sym(Phi_prod, k = k, n = n, args = args)
+eigs <- eigs_sym(Theta_prod, k = k, n = n, args = args)
 runtime <- round(difftime(Sys.time(), start_time, units = "secs"), 3)
 cat("Eigendecomposition completed in", runtime, "seconds.\n")
 

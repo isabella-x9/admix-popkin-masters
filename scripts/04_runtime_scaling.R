@@ -7,7 +7,8 @@
 
 suppressPackageStartupMessages({
   library(RSpectra)
-  library(rARPACK)
+  library(rARPACK) 
+  library(popkin)
 })
 
 # Simulate genotype matrix (0,1,2)
@@ -18,33 +19,35 @@ simulate_genotypes <- function(n, m) {
 # RSpectra version (explicit matrix)
 run_rspectra <- function(X, k) {
   n <- nrow(X)
-  Phi <- popkin::popkin(X, loci_on_cols = TRUE)
   t0 <- Sys.time()
-  eigs <- RSpectra::eigs_sym(Phi, k = min(k, n - 1))
+  Phi <- popkin::popkin(X, loci_on_cols = TRUE)
+  Theta <- inbr_diag(Phi) 
+  eigs <- RSpectra::eigs_sym(Theta, k = min(k, n - 1))
   runtime <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   runtime
-}
+} 
 
 # rARPACK version (function-based)
 run_rarpack <- function(X, k) {
   n <- nrow(X)
   A_min <- min(popkin_A(X, loci_on_cols = TRUE)$A)
   X1 <- X - 1   # subtract 1 from every entry
+  d <- rowMeans( X1^2 - 1 ) / A_min 
   args <- list(
-    X1 = X1, A_min = A_min 
-  )
+    X1 = X1, A_min = A_min, d = d 
+  ) 
   
   source("scripts/Phi_prod.R")
   
   t0 <- Sys.time()
-  eigs <- rARPACK::eigs_sym(Phi_prod, k = min(k, n - 1), n = n, args = args)
+  eigs <- rARPACK::eigs_sym(Theta_prod, k = min(k, n - 1), n = n, args = args)
   runtime <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   runtime
 }
 
 # Benchmark loop
 set.seed(123)
-sizes <- c(10, 100, 1000)
+sizes <- c(10, 100, 1000, 10000, 100000, 1000000)
 k <- 10
 results <- data.frame(n = sizes, RSpectra = NA, rARPACK = NA)
 

@@ -1,0 +1,66 @@
+ssh wx90@dcc-login.oit.duke.edu
+
+
+# Load modules
+module avail
+
+module load R/4.4.3 
+
+
+
+# Load file to Terminal 
+-> get to folder -> right click -> open in new Terminal window
+
+scp 04_runtime_scaling.R wx90@dcc-login.oit.duke.edu:~/
+
+
+
+# Submitting script
+sbatch 04_runtime_scaling.bash    # or any file name 
+
+
+# Check 
+squeue -u wx90
+
+
+# Make directory
+mkdir scripts/      # or any folder
+
+
+# Move a file to a folder
+mv Phi_prod.R scripts/
+
+
+
+##### Copy file locally 
+scp wx90@dcc-login.oit.duke.edu:~/output/runtime_scaling.csv .    # or any directory
+
+
+
+# Looking at the last several lines of file
+tail -f *file name*
+
+
+# "oom" stands for out of memory 
+
+
+
+
+
+---------------------TO-DO-------------------------------
+1) Make changes to png output, change script to pdf. 
+
+2) Test more numbers with n and m (m possibly going to 100,000)
+
+3) Presentation for research progress 
+
+4) Write the report 
+
+
+
+
+
+
+
+
+
