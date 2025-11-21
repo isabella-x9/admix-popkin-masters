@@ -21,7 +21,8 @@ out_prefix <- "output/eigen"
 # Load Popkin kinship matrix
 cat("Loading Popkin kinship matrix from:", grm_path, "\n")
 Phi <- as.matrix(read.table(grm_path, header = TRUE, row.names = 1))
-print(Phi)
+# Overwrite Phi by applying inbreeding diagonal (into coancestry matrix theta)
+Phi <- inbr_diag(Phi) 
 cat("Matrix dimensions:", paste(dim(Phi), collapse = " x "), "\n")
 
 # Compute top-K eigenpairs
