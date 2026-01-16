@@ -11,6 +11,7 @@
 suppressPackageStartupMessages({
   library(data.table)
   library(RSpectra)
+  library(popkin)
 })
 
 # User inputs 
