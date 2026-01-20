@@ -1,9 +1,12 @@
 #!/bin/bash
 # ------------------------------------------------------------
 # 04_runtime_scaling_array.bash
-#   -   Run from login node to launch jobs with memory set by n 
-#   -   Executed automatically by SLURM for each array task
-#   -   If a job is killed, rerunning continues from the last completed step 
+#   - Run from login node:
+#       bash scripts/04_runtime_scaling.bash submit
+#   - SLURM runs this same file for each array task 
+#   - Each step skips if its expected output exists
+#   - Policy: compute explicit Phi + RSpectra up to n=50000,
+#             but skip Phi/RSpectra at n=100000 (rARPACK only)
 # ------------------------------------------------------------
 
 set -euo pipefail
@@ -11,19 +14,21 @@ trap 'echo "[ERROR] Failed at line $LINENO. n=${n:-NA}. cmd=$BASH_COMMAND" >&2' 
 
 module load R/4.4.3
 
-# n values (array index 1..10)
-N_VALUES=(10 20 50 100 200 500 1000 2000 5000 10000)
+# n values (array index is 1-based)
+N_VALUES=(10 20 50 100 200 500 1000 2000 5000 10000 20000 50000 100000)
 
 # memory buckets by ARRAY INDEX (1-based)
-SMALL_IDX="1-6"   # 10..500
-MED_IDX="7-9"     # 1000..5000
-LARGE_IDX="10"    # 10000
+SMALL_IDX="1-7"      # 10..1000
+MED_IDX="8-10"       # 2000..10000
+LARGE_IDX="11-12"    # 20000, 50000
+XL_IDX="13"          # 100000
 
 SMALL_MEM="32G"
-MED_MEM="128G"
-LARGE_MEM="250G"
-TIME_LIMIT="04:00:00"
+MED_MEM="256G"
+LARGE_MEM="256G"     # explicit Phi for 20k, 50k
+XL_MEM="128G"        # operator-only for 100k
 
+TIME_LIMIT="06:00:00"
 MAIL_USER="wx90@duke.edu"
 
 LOG_DIR="logs"
@@ -67,6 +72,18 @@ if [[ "${1:-}" == "submit" ]]; then
     --mail-type=END,FAIL \
     "$0"
 
+  echo "[SUBMIT] XL array=${XL_IDX} mem=${XL_MEM}"
+  sbatch \
+    --job-name=rt_xl \
+    --output="${LOG_DIR}/rt_xl_%A_%a.out" \
+    --array="${XL_IDX}" \
+    --mem="${XL_MEM}" \
+    --ntasks-per-node=1 \
+    --time="${TIME_LIMIT}" \
+    --mail-user="${MAIL_USER}" \
+    --mail-type=END,FAIL \
+    "$0"
+
   echo "[SUBMIT] Done. Use: squeue -u \$USER"
   exit 0
 fi
@@ -74,17 +91,25 @@ fi
 # ---------- worker mode ----------
 if [[ -z "${SLURM_ARRAY_TASK_ID:-}" ]]; then
   echo "[ERROR] Not running as a SLURM array task."
-  echo "Use: bash scripts/04_runtime_scaling.bash submit"
+  echo "Use: bash scripts/04_runtime_scaling_array.bash submit"
   exit 1
 fi
 
 idx=$((SLURM_ARRAY_TASK_ID - 1))
 n="${N_VALUES[$idx]}"
 
+# Skip explicit Phi/RSpectra ONLY at n=100000
+PHI_CUTOFF=100000
+DO_PHI=1
+if [[ "${n}" -ge "${PHI_CUTOFF}" ]]; then
+  DO_PHI=0
+fi
+
 echo "=============================================="
 echo "[JOB ] ${SLURM_JOB_ID:-NA}  [TASK] ${SLURM_ARRAY_TASK_ID}"
 echo "[INFO] n=${n}  mem=${SLURM_MEM_PER_NODE:-NA}"
 echo "[INFO] workdir=$(pwd)"
+echo "[INFO] DO_PHI=${DO_PHI}"
 echo "=============================================="
 
 # expected outputs for resume/skip
@@ -103,17 +128,25 @@ else
 fi
 
 echo "[STEP] 04b compute Phi/A_min"
-if [[ -f "${phi_out}" && -f "${amin_out}" ]]; then
-  echo "[SKIP] ${phi_out} and ${amin_out}"
+if [[ "${DO_PHI}" -eq 0 ]]; then
+  echo "[SKIP] Phi/A_min disabled at n=${n} (stop at 100000)"
 else
-  Rscript scripts/04b_compute_phi_amin.R "${n}"
+  if [[ -f "${phi_out}" && -f "${amin_out}" ]]; then
+    echo "[SKIP] ${phi_out} and ${amin_out}"
+  else
+    Rscript scripts/04b_compute_phi_amin.R "${n}"
+  fi
 fi
 
 echo "[STEP] 04c RSpectra eigs"
-if [[ -f "${rs_rt_out}" ]]; then
-  echo "[SKIP] ${rs_rt_out}"
+if [[ "${DO_PHI}" -eq 0 ]]; then
+  echo "[SKIP] RSpectra requires explicit Phi (skipped at n=${n})"
 else
-  Rscript scripts/04c_run_rspectra.R "${n}"
+  if [[ -f "${rs_rt_out}" ]]; then
+    echo "[SKIP] ${rs_rt_out}"
+  else
+    Rscript scripts/04c_run_rspectra.R "${n}"
+  fi
 fi
 
 echo "[STEP] 04d rARPACK eigs"
