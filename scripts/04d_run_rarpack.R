@@ -35,9 +35,12 @@ t_loadX <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 n_check <- nrow(X)
 if (n_check != n) stop("Loaded n = ", n_check, " but expected n = ", n)
 
+p_obs <- rowMeans( !is.na( X ) )
+
 # Center X -> X1
 t0 <- Sys.time()
-X1 <- sweep(X, 2, colMeans(X))
+X1 <- X - 1
+X1[ is.na( X1 ) ] <- 0
 t_center <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
 # Load A_min
@@ -47,7 +50,7 @@ t_loadAmin <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
 # Build d
 t0 <- Sys.time()
-d <- rowMeans(X1^2 - 1) / A_min
+d <- rowMeans(X1^2 - 1) / A_min / p_obs
 t_buildd <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
 # Phi_prod.R 
@@ -61,6 +64,7 @@ args_op <- list(X1 = X1, A_min = A_min, d = d)
 # Eigs
 t0 <- Sys.time()
 fit <- eigs_sym(Theta_prod, k = k, n = n, args = args_op)
+fit_miss <- eigs_sym(Theta_prod_miss, k = k, n = n, args = args_op)
 t_eigs <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
 # Write outputs

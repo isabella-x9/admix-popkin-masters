@@ -1,17 +1,17 @@
-# RStudio / renv
+# DCC outputs
+dcc_outputs/
+output/
+
+# Large genotype data
+hgdp_wgs_autosomes_ld_prune_1000kb_0.3_maf-0.01_geno-0.1/
+
+# temp folders
+**/tmp/
+
+# R junk
 .Rhistory
 .RData
 .Rproj.user/
-.Renv
-renv/library/
-renv/staging/
-# Data
-data/raw/
-data/processed/
-data/sims/
-# Outputs
-output/
-# System / temporary files
+
+# OS
 .DS_Store
-*.log
-*.tmp
