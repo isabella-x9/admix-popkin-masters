@@ -193,13 +193,13 @@ Outputs of analyses with missingness of real genomic data are written to `output
 ## Example Results
 
 ### Runtime Scaling
-![Runtime scaling](dcc_outputs/runtime_totals_comparison_rspectra.png) 
+[![Runtime scaling](figures/runtime_totals_comparison_rspectra.png)](dcc_outputs/runtime_totals_comparison_rspectra.pdf)
 
 ### Eigenvalue Parity
-![Eigenvalue parity](dcc_outputs/eigenvalues_parity_n_20000.png) 
+[![Eigenvalue parity](figures/eigenvalues_parity_n_20000.png)](dcc_outputs/eigenvalues_parity_n_20000.pdf)
 
 ### Missingness Heatmap
-![Missingness heatmap](output/missingness_hgdp/heatmap_kinship_sorted.png) 
+[![Missingness heatmap](figures/heatmap_kinship_sorted.png)](output/missingness_hgdp/heatmap_kinship_sorted.pdf)
 
 
 ---
