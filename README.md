@@ -168,15 +168,10 @@ This stage analyzes missingness patterns in the HGDP genotype dataset and studie
 
 ## Simulation Setup
 
-Genotype matrices are simulated as
-$$
-\mathbf{X}^{n \times m} \in \{0,1,2\} 
-$$
-with entries drawn from 
-$$
-\mathrm{Binomial}(2, p), 
-$$
-where $p = 0.5$. Markers are centered before computing kinship matrices. These simulations provide a controlled setting for benchmarking eigendecomposition accuracy and scalability across increasing sample sizes. 
+Genotype matrices are simulated as $\mathbf{X}^{n \times m} \in \{0,1,2\}$
+with entries drawn from $\mathrm{Binomial}(2, p),$ where $p = 0.5$. 
+
+Markers are centered before computing kinship matrices. These simulations provide a controlled setting for benchmarking eigendecomposition accuracy and scalability across increasing sample sizes. 
 
 
 ---
@@ -198,13 +193,13 @@ Outputs of analyses with missingness of real genomic data are written to `output
 ## Example Results
 
 ### Runtime Scaling
-![Runtime scaling](dcc_outputs/runtime_totals_comparison_rspectra.pdf) 
+![Runtime scaling](dcc_outputs/runtime_totals_comparison_rspectra.png) 
 
 ### Eigenvalue Parity
-![Eigenvalue parity](dcc_outputs/eigenvalues_parity_n_20000.pdf) 
+![Eigenvalue parity](dcc_outputs/eigenvalues_parity_n_20000.png) 
 
 ### Missingness Heatmap
-![Missingness heatmap](output/missingness_hgdp/heatmap_kinship_sorted.pdf) 
+![Missingness heatmap](output/missingness_hgdp/heatmap_kinship_sorted.png) 
 
 
 ---
