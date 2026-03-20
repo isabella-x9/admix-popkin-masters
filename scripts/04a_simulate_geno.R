@@ -7,7 +7,7 @@ n <- as.integer(args[1])
 m <- 10000
 
 dir.create("output/tmp", showWarnings = FALSE, recursive = TRUE)
-geno_path <- sprintf("output/tmp/geno_n_%d.tsv", n)
+geno_path <- sprintf("output/tmp/geno_n_%d.rds", n) 
 
 if (file.exists(geno_path)) {
   cat("Exists, skipping:", geno_path, "\n")
@@ -16,6 +16,6 @@ if (file.exists(geno_path)) {
 
 X <- matrix(sample(0:2, n * m, replace = TRUE), nrow = n, ncol = m)
 colnames(X) <- paste0("SNP", seq_len(m))
-write.table(X, geno_path, sep="\t", quote=FALSE, row.names=FALSE, col.names=TRUE)
+saveRDS(X, geno_path) 
 
 cat("Wrote:", geno_path, "\n")

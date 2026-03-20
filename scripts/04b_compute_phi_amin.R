@@ -8,8 +8,8 @@ if (length(args) < 1) stop("Usage: Rscript scripts/04b_compute_phi_amin.R <n>")
 
 n <- as.integer(args[1])
 
-geno_path <- sprintf("output/tmp/geno_n_%d.tsv", n)
-phi_path  <- sprintf("output/tmp/Phi_n_%d.tsv", n)
+geno_path <- sprintf("output/tmp/geno_n_%d.rds", n)
+phi_path <- sprintf("output/tmp/Phi_n_%d.rds", n)
 amin_path <- sprintf("output/tmp/Phi_n_%d_Amin.rds", n)
 time_path <- sprintf("output/tmp/popkin_n_%d_timing.csv", n)
 
@@ -26,7 +26,7 @@ t_total0 <- Sys.time()
 
 # Load X
 t0 <- Sys.time()
-X <- as.matrix(read.table(geno_path, header = TRUE))
+X <- readRDS(geno_path) 
 t_loadX <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
 # popkin()
@@ -36,12 +36,12 @@ t_popkin <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
 # A_min via popkin_A()
 t0 <- Sys.time()
-A_min <- min(popkin_A(X, loci_on_cols = TRUE)$A)
+A_min <- min(popkin::popkin_A(X, loci_on_cols = TRUE)$A) 
 t_amin <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
 # Write outputs
 t0 <- Sys.time()
-write.table(Phi, phi_path, sep = "\t", quote = FALSE, row.names = TRUE, col.names = NA)
+saveRDS(Phi, phi_path) 
 saveRDS(A_min, amin_path)
 t_write <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 

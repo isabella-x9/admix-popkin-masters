@@ -1,12 +1,12 @@
 # scripts/06_plot_eigs.R
 # ------------------------------------------------------------
-# Parity plots:
-#   1) Eigenvalues parity: x=rARPACK (operator Theta), y=RSpectra (explicit Theta), log–log, with y=x
-#   2) Eigenvectors parity: k=1..K, one plot per page, sign-aligned, with y=x
-#   3) Corr-by-rank summary: k=1..K
+# Parity plots for RSpectra only:
+#   1) Eigenvalues parity: x = RSpectra operator Theta, y = RSpectra explicit Theta
+#   2) Eigenvectors parity: k = 1..K, one plot per page, sign-aligned, with y = x
+#   3) Corr-by-rank summary: k = 1..K
 #
 # Reads:
-#   output/tmp/rarpack_n_<n>_values.tsv,  _vectors.tsv
+#   output/tmp/rspectra_operator_theta_n_<n>_values.tsv, _vectors.tsv
 #   output/tmp/rspectra_theta_n_<n>_values.tsv, _vectors.tsv
 #
 # Writes:
@@ -22,97 +22,88 @@ suppressPackageStartupMessages({
 N_VALUES <- c(10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000)
 dir.create("output", showWarnings = FALSE, recursive = TRUE)
 
-# ---------- METHOD COLORS (match 05) ----------
-COL_RARPACK  <- "#1f77b4"
-COL_RSPECTRA <- "#ff7f0e"
-COL_DIAG     <- "grey25"
-
+COL_EXPLICIT <- "blue"
+COL_OPERATOR <- "red"
+COL_DIAG <- "grey25"
 PT_ALPHA <- 0.25
 
 read_vec <- function(path) as.numeric(scan(path, quiet = TRUE))
 read_mat <- function(path) as.matrix(read.table(path, header = FALSE))
 
-method_prefix <- function(method) {
-  method <- match.arg(method, c("rarpack", "rspectra"))
-  if (method == "rarpack") "rarpack" else "rspectra_theta"
+have_files_for <- function(n) {
+  v_op <- sprintf("output/tmp/rspectra_operator_theta_n_%d_values.tsv", n)
+  u_op <- sprintf("output/tmp/rspectra_operator_theta_n_%d_vectors.tsv", n)
+  v_ex <- sprintf("output/tmp/rspectra_theta_n_%d_values.tsv", n)
+  u_ex <- sprintf("output/tmp/rspectra_theta_n_%d_vectors.tsv", n)
+  file.exists(v_op) && file.exists(u_op) && file.exists(v_ex) && file.exists(u_ex)
 }
 
-have_files_for <- function(n, method = c("rarpack", "rspectra")) {
-  method <- match.arg(method)
-  pref <- method_prefix(method)
-  v <- sprintf("output/tmp/%s_n_%d_values.tsv", pref, n)
-  u <- sprintf("output/tmp/%s_n_%d_vectors.tsv", pref, n)
-  file.exists(v) && file.exists(u)
-}
-
-# Choose n: allow override "Rscript scripts/06_plot_eigs.R 20000"
-N_VALUES <- c(10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000)
 args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) >= 1) {
   n <- as.integer(args[1])
-  if (!have_files_for(n, "rarpack") || !have_files_for(n, "rspectra")) {
-    stop("Need BOTH rarpack and rspectra_theta eig files for n = ", n)
+  if (!have_files_for(n)) {
+    stop("Need BOTH rspectra_operator_theta and rspectra_theta eig files for n = ", n)
   }
 } else {
   n <- NA_integer_
   for (cand in rev(N_VALUES)) {
-    if (have_files_for(cand, "rarpack") && have_files_for(cand, "rspectra")) {
+    if (have_files_for(cand)) {
       n <- cand
       break
     }
   }
-  if (!is.finite(n)) stop("No n found with both rarpack and rspectra_theta eig outputs.")
+  if (!is.finite(n)) stop("No n found with both RSpectra operator and explicit eig outputs.")
 }
 
-# Load
-ra_vals <- read_vec(sprintf("output/tmp/rarpack_n_%d_values.tsv", n))
-rs_vals <- read_vec(sprintf("output/tmp/rspectra_theta_n_%d_values.tsv", n))
+op_vals <- read_vec(sprintf("output/tmp/rspectra_operator_theta_n_%d_values.tsv", n))
+ex_vals <- read_vec(sprintf("output/tmp/rspectra_theta_n_%d_values.tsv", n))
 
-ra_vecs <- read_mat(sprintf("output/tmp/rarpack_n_%d_vectors.tsv", n))
-rs_vecs <- read_mat(sprintf("output/tmp/rspectra_theta_n_%d_vectors.tsv", n))
+op_vecs <- read_mat(sprintf("output/tmp/rspectra_operator_theta_n_%d_vectors.tsv", n))
+ex_vecs <- read_mat(sprintf("output/tmp/rspectra_theta_n_%d_vectors.tsv", n))
 
-# Ensure same k
-k <- min(length(ra_vals), length(rs_vals), ncol(ra_vecs), ncol(rs_vecs))
-ra_vals <- ra_vals[seq_len(k)]
-rs_vals <- rs_vals[seq_len(k)]
-ra_vecs <- ra_vecs[, seq_len(k), drop = FALSE]
-rs_vecs <- rs_vecs[, seq_len(k), drop = FALSE]
+k <- min(length(op_vals), length(ex_vals), ncol(op_vecs), ncol(ex_vecs))
+op_vals <- op_vals[seq_len(k)]
+ex_vals <- ex_vals[seq_len(k)]
+op_vecs <- op_vecs[, seq_len(k), drop = FALSE]
+ex_vecs <- ex_vecs[, seq_len(k), drop = FALSE]
 
-# Sign alignment
 for (j in seq_len(k)) {
-  s <- sum(ra_vecs[, j] * rs_vecs[, j])
-  if (is.finite(s) && s < 0) rs_vecs[, j] <- -rs_vecs[, j]
+  s <- sum(op_vecs[, j] * ex_vecs[, j])
+  if (is.finite(s) && s < 0) ex_vecs[, j] <- -ex_vecs[, j]
 }
 
-# ------------------------------------------------------------
-# (1) Eigenvalues parity (log–log)
-# ------------------------------------------------------------
+# (1) Eigenvalues parity
 df_vals <- data.frame(
   k = seq_len(k),
-  rarpack = ra_vals,
-  rspectra = rs_vals
+  operator = op_vals,
+  explicit = ex_vals
 )
 
-df_vals <- df_vals[is.finite(df_vals$rarpack) & is.finite(df_vals$rspectra) &
-                     df_vals$rarpack > 0 & df_vals$rspectra > 0, , drop = FALSE]
+df_vals <- df_vals[
+  is.finite(df_vals$operator) &
+    is.finite(df_vals$explicit) &
+    df_vals$operator > 0 &
+    df_vals$explicit > 0,
+  , drop = FALSE
+]
 
 if (nrow(df_vals) == 0) {
   warning("No positive finite eigenvalues found; skipping eigenvalues parity plot.")
 } else {
-  xlim <- range(df_vals$rarpack, finite = TRUE)
-  ylim <- range(df_vals$rspectra, finite = TRUE)
+  xlim <- range(df_vals$operator, finite = TRUE)
+  ylim <- range(df_vals$explicit, finite = TRUE)
   
   label_ranks <- intersect(c(1, 2, 3, 5, 10), df_vals$k)
   df_lab <- df_vals[df_vals$k %in% label_ranks, , drop = FALSE]
   
-  p_vals <- ggplot(df_vals, aes(x = rarpack, y = rspectra)) +
+  p_vals <- ggplot(df_vals, aes(x = operator, y = explicit)) +
     geom_point(
       shape = 21,
       size = 2.8,
       stroke = 0.7,
-      color = COL_RARPACK,
-      fill = COL_RSPECTRA,
+      color = COL_OPERATOR,
+      fill = COL_EXPLICIT,
       alpha = 0.9
     ) +
     geom_abline(intercept = 0, slope = 1, linewidth = 1.0, linetype = 2, color = COL_DIAG) +
@@ -126,9 +117,8 @@ if (nrow(df_vals) == 0) {
     scale_y_log10(limits = ylim) +
     coord_equal() +
     labs(
-      title = sprintf("Eigenvalue parity (log–log, n = %d)", n),
-      x = "Eigenvalue (rARPACK, operator Theta)",
-      y = "Eigenvalue (RSpectra, explicit Theta)"
+      x = "Eigenvalue (Operator Theta)",
+      y = "Eigenvalue (Explicit Theta)"
     ) +
     theme_bw(base_size = 12)
   
@@ -140,51 +130,40 @@ if (nrow(df_vals) == 0) {
   )
 }
 
-# ------------------------------------------------------------
-# (2) Eigenvectors parity: one plot per page
-# ------------------------------------------------------------
+# (2) Eigenvectors parity
 out_vec_pdf <- sprintf("output/eigenvectors_parity_n_%d.pdf", n)
 cors <- rep(NA_real_, k)
 
 pdf(out_vec_pdf, width = 7.2, height = 6.6)
 for (j in seq_len(k)) {
-  xj <- ra_vecs[, j]
-  yj <- rs_vecs[, j]
+  xj <- op_vecs[, j]
+  yj <- ex_vecs[, j]
   
   r <- suppressWarnings(cor(xj, yj, use = "complete.obs"))
   cors[j] <- r
   
-  rng <- range(c(xj, yj), finite = TRUE)
-  xlim <- rng
-  ylim <- rng
-  
   dfj <- data.frame(x = xj, y = yj)
   dfj <- dfj[is.finite(dfj$x) & is.finite(dfj$y), , drop = FALSE]
+  
+  if (nrow(dfj) == 0) next
+  
+  rng <- range(c(dfj$x, dfj$y), finite = TRUE)
   
   p_j <- ggplot(dfj, aes(x = x, y = y)) +
     geom_point(
       shape = 21,
       size = 1.6,
       stroke = 0.2,
-      color = COL_RARPACK,
-      fill = COL_RSPECTRA,
+      color = COL_OPERATOR,
+      fill = COL_EXPLICIT,
       alpha = PT_ALPHA
     ) +
     geom_abline(intercept = 0, slope = 1, linewidth = 1.0, linetype = 2, color = COL_DIAG) +
-    coord_equal(xlim = xlim, ylim = ylim) +
-    annotate(
-      "text",
-      x = xlim[1] + 0.02 * diff(xlim),
-      y = ylim[2] - 0.05 * diff(ylim),
-      label = sprintf("corr = %.4f", r),
-      hjust = 0,
-      vjust = 1,
-      size = 4
-    ) +
+    coord_equal(xlim = rng, ylim = rng) +
     labs(
-      title = sprintf("Eigenvector parity (n = %d): k = %d", n, j),
-      x = "rARPACK entry (operator Theta)",
-      y = "RSpectra entry (explicit Theta)"
+      title = sprintf("k = %d", j),
+      x = "Operator entry",
+      y = "Explicit entry"
     ) +
     theme_bw(base_size = 12)
   
@@ -192,9 +171,7 @@ for (j in seq_len(k)) {
 }
 dev.off()
 
-# ------------------------------------------------------------
 # (3) Corr-by-rank summary
-# ------------------------------------------------------------
 df_cor <- data.frame(k = seq_len(k), corr = cors)
 df_cor <- df_cor[is.finite(df_cor$corr), , drop = FALSE]
 
@@ -205,14 +182,13 @@ if (nrow(df_cor) == 0) {
   
   p_cor <- ggplot(df_cor, aes(x = k, y = corr)) +
     geom_hline(yintercept = 1, linewidth = 1.0, linetype = 2, color = COL_DIAG) +
-    geom_line(linewidth = 0.8, color = COL_RARPACK) +
-    geom_point(shape = 21, size = 2.4, stroke = 0.6, color = COL_RARPACK, fill = COL_RSPECTRA) +
+    geom_line(linewidth = 0.8, color = COL_OPERATOR) +
+    geom_point(shape = 21, size = 2.4, stroke = 0.6, color = COL_OPERATOR, fill = COL_EXPLICIT) +
     scale_y_continuous(limits = c(y_min, 1.0)) +
     scale_x_continuous(breaks = pretty(df_cor$k)) +
     labs(
-      title = sprintf("Eigenvector agreement by rank (n = %d)", n),
       x = "Rank k (1 = largest)",
-      y = "corr(rARPACK, RSpectra)"
+      y = "Correlation"
     ) +
     theme_bw(base_size = 12)
   
@@ -225,9 +201,15 @@ if (nrow(df_cor) == 0) {
 }
 
 cat(
+  "Using:\n",
+  sprintf(" - operator: output/tmp/rspectra_operator_theta_n_%d_[values|vectors].tsv\n", n),
+  sprintf(" - explicit: output/tmp/rspectra_theta_n_%d_[values|vectors].tsv\n", n),
   "Wrote:\n",
   sprintf(" - output/eigenvalues_parity_n_%d.pdf\n", n),
   sprintf(" - output/eigenvectors_parity_n_%d.pdf\n", n),
   sprintf(" - output/eigenvector_corr_by_rank_n_%d.pdf\n", n),
   sep = ""
 )
+
+
+

@@ -7,8 +7,8 @@
 #   d  <- rowMeans(X1^2 - 1) / A_min
 #
 # Inputs:
-#   output/tmp/Phi_n_<n>.tsv
-#   output/tmp/geno_n_<n>.tsv
+#   output/tmp/Phi_n_<n>.rds
+#   output/tmp/geno_n_<n>.rds
 #   output/tmp/Phi_n_<n>_Amin.rds
 #
 # Outputs:
@@ -28,8 +28,8 @@ if (length(args) < 1) stop("Usage: Rscript scripts/04c_run_rspectra.R <n>")
 n <- as.integer(args[1])
 k <- min(10, n - 1)
 
-phi_path   <- sprintf("output/tmp/Phi_n_%d.tsv", n)
-geno_path  <- sprintf("output/tmp/geno_n_%d.tsv", n)
+phi_path   <- sprintf("output/tmp/Phi_n_%d.rds", n) 
+geno_path <- sprintf("output/tmp/geno_n_%d.rds", n)
 amin_path  <- sprintf("output/tmp/Phi_n_%d_Amin.rds", n)
 
 out_prefix <- sprintf("output/tmp/rspectra_theta_n_%d", n)
@@ -49,12 +49,12 @@ t_total0 <- Sys.time()
 
 # ---- Load Phi ----
 t0 <- Sys.time()
-Phi <- as.matrix(read.table(phi_path, header = TRUE, row.names = 1))
+Phi <- as.matrix(readRDS(phi_path))
 t_loadPhi <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
 # ---- Load X ----
 t0 <- Sys.time()
-X <- as.matrix(read.table(geno_path, header = TRUE))
+X <- readRDS(geno_path)
 t_loadX <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
 n_check <- nrow(X)
